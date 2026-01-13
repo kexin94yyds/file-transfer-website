@@ -15,7 +15,7 @@ export default function Home() {
   const [joinCode, setJoinCode] = useState("")
   const [uploading, setUploading] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [downloadFiles, setDownloadFiles] = useState<{ name: string; url: string }[]>([])
+  const [downloadFiles, setDownloadFiles] = useState<{ name: string; url: string; downloadUrl?: string }[]>([])
   const [dragOver, setDragOver] = useState(false)
   const [error, setError] = useState("")
 
@@ -212,7 +212,7 @@ export default function Home() {
                   {downloadFiles.map((file, i) => (
                     <a
                       key={i}
-                      href={file.url}
+                      href={file.downloadUrl ?? file.url}
                       download={file.name}
                       className="flex items-center justify-between bg-muted/50 rounded px-3 py-3 text-sm hover:bg-muted transition-colors"
                     >

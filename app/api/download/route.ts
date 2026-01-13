@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         const namePart = b.pathname.slice(prefix.length)
         const [, ...rest] = namePart.split("__")
         const name = rest.join("__") || namePart
-        return { uploadedAt: b.uploadedAt.getTime(), name, url: b.url }
+        return { uploadedAt: b.uploadedAt.getTime(), name, url: b.url, downloadUrl: b.downloadUrl }
       })
       .filter((f) => now - f.uploadedAt <= 10 * 60 * 1000)
       .sort((a, b) => b.uploadedAt - a.uploadedAt)
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "房间号不存在或已过期" }, { status: 404 })
     }
 
-    return NextResponse.json({ files: validFiles.map(({ name, url }) => ({ name, url })) })
+    return NextResponse.json({ files: validFiles.map(({ name, url, downloadUrl }) => ({ name, url, downloadUrl })) })
   } catch (error) {
     console.error("Download list error:", error)
     return NextResponse.json({ error: "获取失败" }, { status: 500 })
