@@ -1,5 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { roomStorage } from "../upload/route"
+
+import { list } from "@vercel/blob"
+
+export const runtime = "nodejs"
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code")?.toUpperCase()
@@ -8,16 +11,33 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "请输入房间号" }, { status: 400 })
   }
 
-  const data = roomStorage.get(code)
-
-  if (!data) {
-    return NextResponse.json({ error: "房间号不存在或已过期" }, { status: 404 })
+  if (!/^[A-Z0-9]{6}$/.test(code)) {
+    return NextResponse.json({ error: "房间号格式不正确" }, { status: 400 })
   }
 
-  if (data.expires < Date.now()) {
-    roomStorage.delete(code)
-    return NextResponse.json({ error: "文件已过期" }, { status: 404 })
-  }
+  const prefix = `transfer/rooms/${code}/`
+  const now = Date.now()
 
-  return NextResponse.json({ files: data.files })
+  try {
+    const result = await list({ prefix })
+    const validFiles = result.blobs
+      .map((b) => {
+        const namePart = b.pathname.slice(prefix.length)
+        const [tsStr, ...rest] = namePart.split("__")
+        const ts = Number(tsStr)
+        const name = rest.join("__") || namePart
+        return { ts, name, url: b.url }
+      })
+      .filter((f) => Number.isFinite(f.ts) && now - f.ts <= 10 * 60 * 1000)
+      .sort((a, b) => b.ts - a.ts)
+
+    if (validFiles.length === 0) {
+      return NextResponse.json({ error: "房间号不存在或已过期" }, { status: 404 })
+    }
+
+    return NextResponse.json({ files: validFiles.map(({ name, url }) => ({ name, url })) })
+  } catch (error) {
+    console.error("Download list error:", error)
+    return NextResponse.json({ error: "获取失败" }, { status: 500 })
+  }
 }

@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useCallback } from "react"
+import { upload } from "@vercel/blob/client"
 import { Upload, Download, Copy, Check, Smartphone, Monitor, Laptop } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,19 +38,31 @@ export default function Home() {
     setError("")
 
     try {
-      const formData = new FormData()
-      files.forEach((file) => formData.append("files", file))
+      const roomRes = await fetch("/api/room", { method: "POST" })
+      const roomData = await roomRes.json()
 
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      })
-
-      const data = await res.json()
-      if (data.code) {
-        setRoomCode(data.code)
-        setFiles([])
+      if (!roomRes.ok || !roomData.code) {
+        throw new Error("Failed to create room")
       }
+
+      const code = String(roomData.code).toUpperCase()
+
+      await Promise.all(
+        files.map(async (file) => {
+          const safeName = file.name.replace(/\//g, "_")
+          const pathname = `transfer/rooms/${code}/${Date.now()}__${safeName}`
+
+          await upload(pathname, file, {
+            access: "public",
+            handleUploadUrl: "/api/blob",
+            clientPayload: code,
+            multipart: true,
+          })
+        }),
+      )
+
+      setRoomCode(code)
+      setFiles([])
     } catch {
       setError("上传失败，请重试")
     } finally {
