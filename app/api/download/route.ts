@@ -23,13 +23,12 @@ export async function GET(request: NextRequest) {
     const validFiles = result.blobs
       .map((b) => {
         const namePart = b.pathname.slice(prefix.length)
-        const [tsStr, ...rest] = namePart.split("__")
-        const ts = Number(tsStr)
+        const [, ...rest] = namePart.split("__")
         const name = rest.join("__") || namePart
-        return { ts, name, url: b.url }
+        return { uploadedAt: b.uploadedAt.getTime(), name, url: b.url }
       })
-      .filter((f) => Number.isFinite(f.ts) && now - f.ts <= 10 * 60 * 1000)
-      .sort((a, b) => b.ts - a.ts)
+      .filter((f) => now - f.uploadedAt <= 10 * 60 * 1000)
+      .sort((a, b) => b.uploadedAt - a.uploadedAt)
 
     if (validFiles.length === 0) {
       return NextResponse.json({ error: "房间号不存在或已过期" }, { status: 404 })
