@@ -3,6 +3,8 @@ import { type NextRequest, NextResponse } from "next/server"
 
 const roomStorage = new Map<string, { files: { name: string; url: string }[]; expires: number }>()
 
+export const runtime = "nodejs"
+
 // 生成6位随机房间号
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
