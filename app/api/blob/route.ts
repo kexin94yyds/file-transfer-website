@@ -23,8 +23,7 @@ export async function POST(request: NextRequest) {
         }
 
         return {
-          allowedContentTypes: ["*/*"],
-          maximumSizeInBytes: 5 * 1024 * 1024 * 1024,
+          maximumSizeInBytes: 50 * 1024 * 1024 * 1024,
           addRandomSuffix: false,
         }
       },
